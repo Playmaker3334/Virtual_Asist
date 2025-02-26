@@ -705,7 +705,6 @@ def advanced_search(raw_data: pd.DataFrame, filtros: Dict[str, Any]) -> Dict[str
         return handle_error(e, "advanced_search")
 
 
-
 def get_general_stats(raw_data: pd.DataFrame) -> Dict[str, Any]:
     try:
         total_sucursales = len(raw_data['Sucursal'].dropna().unique())
@@ -716,6 +715,15 @@ def get_general_stats(raw_data: pd.DataFrame) -> Dict[str, Any]:
         mejor_calificacion = float(raw_data['Calificacion'].max())
         peor_calificacion = float(raw_data['Calificacion'].min())
         total_puntos = float(raw_data['Puntos_Totales'].sum())
+        
+        # Calcular la fecha más reciente y formatearla
+        fecha_mas_reciente = pd.to_datetime(raw_data['Fecha_y_Hora']).max()
+        fecha_reciente_str = fecha_mas_reciente.strftime('%d/%m/%Y %H:%M')
+        
+        # Calcular también la fecha más antigua (primera)
+        fecha_mas_antigua = pd.to_datetime(raw_data['Fecha_y_Hora']).min()
+        fecha_antigua_str = fecha_mas_antigua.strftime('%d/%m/%Y %H:%M')
+        
         return {
             "message": "Estadísticas generales",
             "data": {
@@ -726,7 +734,9 @@ def get_general_stats(raw_data: pd.DataFrame) -> Dict[str, Any]:
                 "promedio_general": promedio_general,
                 "mejor_calificacion_global": mejor_calificacion,
                 "peor_calificacion_global": peor_calificacion,
-                "total_puntos": total_puntos
+                "total_puntos": total_puntos,
+                "fecha_mas_reciente": fecha_reciente_str,  # Añadida fecha más reciente
+                "fecha_mas_antigua": fecha_antigua_str  # Añadida fecha más antigua
             }
         }
     except Exception as e:
