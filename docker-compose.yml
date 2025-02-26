@@ -1,0 +1,11 @@
+services:
+  virtual-assistant:
+    build: .
+    ports:
+      - "5015:5000"
+    volumes:
+      - .:/app
+    environment:
+      - FLASK_APP=app.py
+      - FLASK_ENV=development
+    command: python app.py

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard con Asistente Virtual</title>
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <!-- Tus estilos personalizados -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <!-- Librería para Markdown -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body class="bg-light"> <!-- Fondo gris claro de Bootstrap -->
+  
+  <!-- NAVBAR -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-danger">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="#">Mi Dashboard</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" 
+              data-bs-target="#navbarSupportedContent" 
+              aria-controls="navbarSupportedContent" aria-expanded="false" 
+              aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <!-- Aquí podrías poner enlaces o menús -->
+      </div>
+    </div>
+  </nav>
+
+  <!-- CONTENIDO PRINCIPAL -->
+  <div class="container my-4">
+    <h1 class="mb-4">Dashboard</h1>
+    <div class="card shadow">
+      <div class="card-body p-0">
+        <!-- El iframe con tu Power BI -->
+        <iframe 
+          width="100%" 
+          height="600" 
+          src="https://app.powerbi.com/view?r=eyJrIjoiYzhkOWViZWEtOTE1My00YThlLWFmZDktODk2OThiZTE1ODY5IiwidCI6ImVhY2NhYjBhLTFlNGMtNDlhMy1hZDY3LTU2NmVlYWI1MGFlMSJ9" 
+          frameborder="0" 
+          allowFullScreen="true">
+        </iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chat Pop-Up -->
+  <div id="chatPopup" class="chat-popup">
+    <div class="chat-header">
+      <h2>Asistente Virtual</h2>
+      <button id="closeChat" class="close-chat">&times;</button>
+    </div>
+    <div class="chat-messages" id="chatMessages">
+      <div class="message assistant">
+        <div class="message-content">
+          ¡Hola! Soy tu asistente virtual. Pregúntame sobre **usuarios**, **sucursales**, **actividades**, **rankings** y más.
+        </div>
+      </div>
+    </div>
+    <div class="chat-input">
+      <input type="text" id="userInput" placeholder="Escribe tu pregunta aquí..." autocomplete="off">
+      <button id="sendButton">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" 
+             fill="currentColor" class="bi bi-send" viewBox="0 0 16 16">
+          <path d="M15.854.146a.5.5 0 0 1 .11.54l-5.819 
+                   14.547a.75.75 0 0 1-1.329.124l-3.178-4.995L.643 
+                   7.184a.75.75 0 0 1 .124-1.33L15.314.037a.5.5 
+                   0 0 1 .54.11ZM6.636 10.07l2.761 4.338L14.13 
+                   2.576 6.636 10.07Zm6.787-8.201L1.591 
+                   6.602l4.339 2.76 7.494-7.493Z"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Botón flotante para abrir el chat -->
+  <button id="openChat" class="chat-bubble">
+    💬
+  </button>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+</body>
+</html>

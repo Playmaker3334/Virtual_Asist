@@ -1,0 +1,226 @@
+/* ------------------------------
+   CONTENEDOR PRINCIPAL DEL CHAT
+------------------------------ */
+.chat-popup {
+    position: fixed;
+    bottom: 80px;
+    right: 20px;
+    width: 380px;
+    height: 500px; /* Fijamos la altura para que no cambie */
+    background-color: #ffffff;
+    border: none;
+    border-radius: 12px;
+    display: none; /* Oculto por defecto */
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    z-index: 9999;
+}
+
+/* ------------------------------
+   HEADER DEL CHAT
+------------------------------ */
+.chat-header {
+    padding: 10px 15px;
+    background: linear-gradient(to right, #d6001c, #b80019);
+    color: white;
+    font-size: 1rem;
+    font-weight: bold;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.chat-header h2 {
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+/* Botón de cerrar */
+.close-chat {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+.close-chat:hover {
+    transform: scale(1.1);
+}
+
+/* ------------------------------
+   LISTA DE MENSAJES
+------------------------------ */
+.chat-messages {
+    flex: 1;
+    padding: 10px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px; /* Espacio entre mensajes */
+}
+
+/* Animación de aparición de cada mensaje */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+.message {
+    animation: fadeIn 0.3s ease forwards;
+}
+
+/* ------------------------------
+   BURBUJAS DE MENSAJE - USUARIO
+------------------------------ */
+.message.user .message-content {
+    position: relative; /* Para la “cola” */
+    background-color: #d6001c;
+    color: #ffffff;
+    padding: 10px 14px;
+    border-radius: 12px;
+    border-top-right-radius: 5px;
+    font-size: 0.85rem;
+    align-self: flex-end; /* Alineado a la derecha */
+    max-width: 80%;
+    box-shadow: 0 2px 5px rgba(214, 0, 28, 0.3);
+    margin-bottom: 5px;
+}
+
+/* Cola de la burbuja del usuario (lado derecho) */
+.message.user .message-content::after {
+    content: "";
+    position: absolute;
+    right: -10px;
+    top: 10px;
+    width: 0;
+    height: 0;
+    border-left: 10px solid #d6001c; /* Color de la burbuja */
+    border-top: 10px solid transparent;
+    border-bottom: 10px solid transparent;
+}
+
+/* ------------------------------
+   BURBUJAS DE MENSAJE - ASISTENTE
+------------------------------ */
+.message.assistant .message-content {
+    position: relative; /* Para la “cola” */
+    background-color: #f8f9fa; /* Gris claro */
+    color: #333333;
+    padding: 10px 14px;
+    border-radius: 12px;
+    border-top-left-radius: 5px;
+    font-size: 0.85rem;
+    align-self: flex-start; /* Alineado a la izquierda */
+    max-width: 80%;
+    border: 1px solid #e6e6e6;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    margin-bottom: 5px;
+}
+
+/* Cola de la burbuja del asistente (lado izquierdo) */
+.message.assistant .message-content::after {
+    content: "";
+    position: absolute;
+    left: -10px;
+    top: 10px;
+    width: 0;
+    height: 0;
+    border-right: 10px solid #f8f9fa; /* Color de la burbuja */
+    border-top: 10px solid transparent;
+    border-bottom: 10px solid transparent;
+}
+
+/* ------------------------------
+   BARRA INFERIOR (INPUT + BOTÓN)
+------------------------------ */
+.chat-input {
+    display: flex;
+    padding: 8px;
+    background-color: #fff;
+    border-top: 1px solid #ddd;
+    align-items: center;
+}
+
+.chat-input input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 24px;
+    font-size: 0.85rem;
+    outline: none;
+    transition: border-color 0.3s ease-in-out;
+}
+
+.chat-input input:focus {
+    border-color: #d6001c;
+}
+
+/* Botón de enviar */
+.chat-input button {
+    background-color: #d6001c;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 38px;
+    height: 38px;
+    margin-left: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.3s ease-in-out, transform 0.1s;
+}
+
+.chat-input button:hover {
+    background-color: #b80019;
+}
+.chat-input button:active {
+    transform: scale(0.95);
+}
+
+/* ------------------------------
+   BOTÓN FLOTANTE PARA ABRIR CHAT
+------------------------------ */
+.chat-bubble {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: #d6001c;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    font-size: 22px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    transition: background 0.3s ease-in-out, transform 0.1s;
+    z-index: 9999;
+}
+.chat-bubble:hover {
+    background-color: #b80019;
+}
+.chat-bubble:active {
+    transform: scale(0.95);
+}
+
+/* ------------------------------
+   INDICADOR DE "PENSANDO..."
+------------------------------ */
+.loading-dots {
+    color: #666;
+    font-style: italic;
+}
+
+
+
