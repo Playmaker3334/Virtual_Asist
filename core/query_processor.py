@@ -59,6 +59,16 @@ from rag_engine import RolPlayRAG
 
 def process_query(rag_engine: RolPlayRAG, query: str, generate_response_func) -> str:
     try:
+        # Verificar que rag_engine no sea None
+        if rag_engine is None:
+            logger.error("Error: rag_engine es None")
+            return "Lo siento, el sistema de análisis no está disponible en este momento."
+            
+        # Verificar que rag_engine.raw_data no sea None
+        if rag_engine.raw_data is None:
+            logger.error("Error: rag_engine.raw_data es None")
+            return "Lo siento, no hay datos disponibles para analizar en este momento."
+            
         # 1. Determinar la intención con determine_intent
         logger.info("Query recibida: %s", query)
         intent = determine_intent(query)
@@ -71,6 +81,11 @@ def process_query(rag_engine: RolPlayRAG, query: str, generate_response_func) ->
         
         query_type = intent["query_type"]
         parameters = intent["parameters"]
+        
+        # Asegurar que parameters es un diccionario válido
+        if parameters is None:
+            parameters = {}
+            logger.warning("Parameters era None, inicializado como diccionario vacío")
 
         # 3. Revisar si se usa contexto previo
         if intent["use_context"]:
@@ -101,10 +116,15 @@ def process_query(rag_engine: RolPlayRAG, query: str, generate_response_func) ->
                     parameters["usuario"] = representante_match.group(1)
                     logger.debug("Usuario extraído de comillas: %s", parameters["usuario"])
                     
-            response_data = get_user_activity_history(
-                rag_engine.raw_data,
-                parameters.get("usuario")
-            )
+            # Verificar que usuario no sea None antes de pasar a get_user_activity_history
+            usuario = parameters.get("usuario")
+            if usuario is None:
+                response_data = {"error": "No se especificó un usuario para analizar", "data": None}
+            else:
+                response_data = get_user_activity_history(
+                    rag_engine.raw_data,
+                    usuario
+                )
         elif query_type == "branch_performance":
             # Si no se especifica una sucursal, usar branch_rankings en su lugar
             if parameters.get("sucursal") is None:
@@ -131,16 +151,26 @@ def process_query(rag_engine: RolPlayRAG, query: str, generate_response_func) ->
                     parameters.get("sucursal")
                 )
         elif query_type == "activity_analysis":
-            response_data = get_activity_stats(
-                rag_engine.raw_data,
-                parameters.get("actividad")
-            )
+            # Verificar que actividad no sea None antes de pasar a get_activity_stats
+            actividad = parameters.get("actividad")
+            if actividad is None:
+                response_data = {"error": "No se especificó una actividad para analizar", "data": None}
+            else:
+                response_data = get_activity_stats(
+                    rag_engine.raw_data,
+                    actividad
+                )
         elif query_type == "top_performance":
+            # Asegurar que filtros sea un diccionario válido
+            filtros = parameters.get("filtros")
+            if filtros is None:
+                filtros = {}
+                
             response_data = get_top_performances(
                 rag_engine.raw_data,
                 parameters.get("n", 5),
                 parameters.get("metric", "calificacion"),
-                parameters.get("filtros", {})
+                filtros
             )
         elif query_type == "comparative":
             response_data = get_comparative_analysis(
@@ -195,25 +225,45 @@ def process_query(rag_engine: RolPlayRAG, query: str, generate_response_func) ->
         elif query_type == "general_stats":
             response_data = get_general_stats(rag_engine.raw_data)
         elif query_type == "users_by_branch":
-            response_data = get_users_by_branch(
-                rag_engine.raw_data,
-                parameters.get("sucursal")
-            )
+            # Verificar que sucursal no sea None antes de pasar a get_users_by_branch
+            sucursal = parameters.get("sucursal")
+            if sucursal is None:
+                response_data = {"error": "No se especificó una sucursal para listar usuarios", "data": None}
+            else:
+                response_data = get_users_by_branch(
+                    rag_engine.raw_data,
+                    sucursal
+                )
         elif query_type == "user_progression":
-            response_data = get_user_progression(
-                rag_engine.raw_data,
-                parameters.get("usuario"),
-                parameters.get("metrica", "calificacion")
-            )
+            # Verificar que usuario no sea None antes de pasar a get_user_progression
+            usuario = parameters.get("usuario")
+            if usuario is None:
+                response_data = {"error": "No se especificó un usuario para analizar su progresión", "data": None}
+            else:
+                response_data = get_user_progression(
+                    rag_engine.raw_data,
+                    usuario,
+                    parameters.get("metrica", "calificacion")
+                )
         elif query_type == "personalized_recommendations":
-            response_data = get_personalized_recommendations(
-                rag_engine.raw_data,
-                parameters.get("usuario")
-            )
+            # Verificar que usuario no sea None antes de pasar a get_personalized_recommendations
+            usuario = parameters.get("usuario")
+            if usuario is None:
+                response_data = {"error": "No se especificó un usuario para generar recomendaciones", "data": None}
+            else:
+                response_data = get_personalized_recommendations(
+                    rag_engine.raw_data,
+                    usuario
+                )
         elif query_type == "advanced_search":
+            # Asegurar que filtros sea un diccionario válido
+            filtros = parameters.get("filtros")
+            if filtros is None:
+                filtros = {}
+                
             response_data = advanced_search(
                 rag_engine.raw_data,
-                parameters.get("filtros", {})
+                filtros
             )
         else:
             # Por defecto, delegamos la consulta a rag_engine.query()
@@ -235,6 +285,7 @@ def process_query(rag_engine: RolPlayRAG, query: str, generate_response_func) ->
         return generate_response_func(query, response_data, query_type)
 
     except ValueError as e:
+        logger.error("ValueError: %s", str(e), exc_info=True)
         if "metric" in str(e).lower() or "tipo" in str(e).lower():
             return ("Lo siento, parece que hay un problema con el tipo de métrica solicitada. "
                     "Puedo proporcionarte rankings por calificación general, por puntos totales "
@@ -253,10 +304,18 @@ def process_query(rag_engine: RolPlayRAG, query: str, generate_response_func) ->
                     "especifica el nombre de la actividad claramente.")
         return f"Hubo un problema con los datos proporcionados: {str(e)}. Por favor, intenta reformular tu pregunta."
     except KeyError as e:
+        logger.error("KeyError: %s", str(e), exc_info=True)
         return f"Lo siento, no encuentro información sobre {str(e)}. ¿Podrías verificar si el dato es correcto?"
     except IndexError:
+        logger.error("IndexError", exc_info=True)
         return ("No encontré suficientes datos para responder a tu consulta. "
                 "¿Podrías reformularla o ser más específico?")
+    except TypeError as e:
+        logger.error("TypeError: %s", str(e), exc_info=True)
+        if "NoneType" in str(e):
+            return ("Lo siento, hay un problema con los datos que estoy intentando procesar. "
+                    "Parece ser un error con valores nulos. ¿Podrías reformular tu consulta?")
+        return f"Hubo un problema de tipo en los datos: {str(e)}. Por favor, intenta con otra consulta."
     except Exception as e:
         logger.error("Error procesando la consulta: %s", str(e), exc_info=True)
         return ("Lo siento, tuve un problema procesando tu consulta. "
