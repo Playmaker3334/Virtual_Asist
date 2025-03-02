@@ -2,6 +2,7 @@
 
 import pandas as pd
 import traceback
+import numpy as np
 import re
 from datetime import datetime, timedelta
 from typing import Dict, Any, List, Optional
@@ -271,26 +272,51 @@ def get_trend_analysis(raw_data: pd.DataFrame, usuario: str = None, actividad: s
             'Puntos_Totales': 'sum'
         }).round(2)
         g.columns = ['usuarios','actividades','calif_mean','calif_max','calif_min','calif_std','puntos_totales']
-        tendencia_valor = data['Calificacion'].corr(pd.to_numeric(data.index))
-        direccion_tendencia = "positiva" if tendencia_valor > 0 else "negativa"
+        
+        # Crear un rango numérico secuencial para correlación
+        # Esto reemplaza el uso problemático de data.index
+        if len(g) > 1:
+            # Crear un índice numérico secuencial (0, 1, 2...)
+            x_range = list(range(len(g)))
+            y_values = g['calif_mean'].values
+            
+            # Calcular la correlación entre el tiempo (secuencia) y calificaciones
+            # Usar pandas Series para aprovechar la función corr()
+            tendencia_valor = pd.Series(y_values).corr(pd.Series(x_range))
+            direccion_tendencia = "positiva" if tendencia_valor > 0 else "negativa"
+        else:
+            # Si solo hay un punto de datos, no se puede calcular tendencia
+            tendencia_valor = 0
+            direccion_tendencia = "sin datos suficientes"
+        
+        # NUEVO: Convertir el DataFrame a un diccionario serializable a JSON
+        # Convertir todos los índices a cadenas explícitamente
+        tendencias_dict = {}
+        for col in g.columns:
+            tendencias_dict[col] = {}
+            for idx, val in zip(g.index, g[col]):
+                # Convertir el índice a cadena, sin importar su tipo
+                idx_str = str(idx)
+                tendencias_dict[col][idx_str] = float(val) if isinstance(val, (int, float, np.number)) else val
+
         return {
             "message": f"Análisis de tendencias por {periodo} completado",
             "data": {
-                "tendencias": g.to_dict(),
+                "tendencias": tendencias_dict,  # Diccionario con claves convertidas a cadenas
                 "metricas_generales": {
                     "total_registros": len(data),
                     "promedio_general": float(data['Calificacion'].mean()),
-                    "tendencia": direccion_tendencia
+                    "tendencia": direccion_tendencia,
+                    "valor_tendencia": float(tendencia_valor) if not pd.isna(tendencia_valor) else 0.0
                 },
                 "periodo_analizado": {
-                    "inicio": data['Fecha_y_Hora'].min(),
-                    "fin": data['Fecha_y_Hora'].max()
+                    "inicio": str(data['Fecha_y_Hora'].min()),
+                    "fin": str(data['Fecha_y_Hora'].max())
                 }
             }
         }
     except Exception as e:
         return handle_error(e, "get_trend_analysis")
-
 
 def get_comparative_analysis(raw_data: pd.DataFrame, usuarios: List[str] = None, fechas: List[str] = None, actividad: str = None) -> Dict[str, Any]:
     try:

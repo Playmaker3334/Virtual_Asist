@@ -93,6 +93,20 @@ def determine_intent(query: str) -> dict:
         elif mentioned_entities["sucursal"]:
             sucursal_value = quoted_entities[0]
 
+    # NUEVO: Extraer fechas directamente del texto para mantener el formato original
+    date_patterns = [
+        r'(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})',  # formatos DD/MM/YYYY o DD-MM-YYYY
+        r'(\d{4}[/-]\d{1,2}[/-]\d{1,2})',    # formatos YYYY/MM/DD o YYYY-MM-DD
+    ]
+    
+    fecha_value = None
+    for pattern in date_patterns:
+        date_matches = re.findall(pattern, query)
+        if date_matches:
+            fecha_value = date_matches[0]
+            logger.debug(f"Fecha extraída directamente del texto: {fecha_value}")
+            break
+
     # Intentar con GPT-4 con hasta 3 intentos
     max_attempts = 3
     
@@ -130,6 +144,25 @@ def determine_intent(query: str) -> dict:
                         intent["parameters"]["actividad"] = actividad_value
                     if "sucursal" in intent["parameters"] and intent["parameters"]["sucursal"] is None:
                         intent["parameters"]["sucursal"] = sucursal_value
+                    
+                    # NUEVO: Reemplazar el formato de fecha de GPT con el extraído directamente del texto
+                    if "fecha" in intent["parameters"] and fecha_value:
+                        # Si GPT encontró una fecha pero con formato incorrecto, reemplazarla
+                        intent["parameters"]["fecha"] = fecha_value
+                        logger.debug(f"Reemplazando fecha de GPT con fecha extraída: {fecha_value}")
+                    elif "fecha" in intent["parameters"] and intent["parameters"]["fecha"]:
+                        # Si no extrajimos la fecha pero GPT sí, verificar su formato
+                        gpt_fecha = intent["parameters"]["fecha"]
+                        # Corregir formato si es necesario (por ejemplo, si es solo números sin separadores)
+                        if re.match(r'^\d{8}$', gpt_fecha):  # formato DDMMYYYY o YYYYMMDD
+                            if int(gpt_fecha[:2]) <= 31 and int(gpt_fecha[2:4]) <= 12:
+                                # Probable formato DDMMYYYY
+                                intent["parameters"]["fecha"] = f"{gpt_fecha[:2]}/{gpt_fecha[2:4]}/{gpt_fecha[4:]}"
+                                logger.debug(f"Reformateando fecha de GPT de {gpt_fecha} a {intent['parameters']['fecha']}")
+                            elif int(gpt_fecha[:4]) >= 2000 and int(gpt_fecha[4:6]) <= 12:
+                                # Probable formato YYYYMMDD
+                                intent["parameters"]["fecha"] = f"{gpt_fecha[6:]}/{gpt_fecha[4:6]}/{gpt_fecha[:4]}"
+                                logger.debug(f"Reformateando fecha de GPT de {gpt_fecha} a {intent['parameters']['fecha']}")
 
                 logger.debug("Intención detectada por GPT-4: %s", intent)
                 return intent
@@ -155,6 +188,8 @@ def determine_intent(query: str) -> dict:
         params["actividad"] = actividad_value
     if sucursal_value:
         params["sucursal"] = sucursal_value
+    if fecha_value:
+        params["fecha"] = fecha_value
     
     # Determinar si es una consulta general o específica para elegir mejor el tipo
     if mentioned_entities["usuario"] and not mentioned_entities["progreso"] and not mentioned_entities["recomendación"]:
@@ -163,6 +198,8 @@ def determine_intent(query: str) -> dict:
         query_type = "branch_performance"
     elif mentioned_entities["actividad"] and not any(kw in cleaned_query.lower() for kw in ["ranking", "mejor", "peor"]):
         query_type = "activity_analysis"
+    elif fecha_value:  # NUEVO: Si encontramos una fecha, probablemente es una consulta de fecha específica
+        query_type = "specific_date"
     else:
         query_type = "exploratory_analysis"
     
